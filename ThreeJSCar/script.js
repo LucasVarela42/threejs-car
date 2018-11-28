@@ -1,18 +1,22 @@
 "use strict";
 
+var stats = new Stats();
 var cena = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(5, 2, 3);
 var render = new THREE.WebGLRenderer({
-    antialias: true
+    antialias: false
 });
 
 render.setSize(window.innerWidth, window.innerHeight);
 render.shadowMap.enabled = true;
-render.shadowMap.type = THREE.PCFShadowMap;
+render.shadowMap.type = THREE.PCFSoftShadowMap;
 
 var canvas = render.domElement;
 document.body.appendChild(canvas);
+
+stats.showPanel(0); // 0: fps, 1: ms, 2: mb, 3+: custom
+document.body.appendChild(stats.dom);
 
 //#region Linha 
 var materialLinha = new THREE.LineBasicMaterial({
@@ -25,14 +29,14 @@ var curva = new THREE.CatmullRomCurve3(
     [
         new THREE.Vector3(-1.5, 0, 0),
         new THREE.Vector3(1.5, 1.5, 0),
-        new THREE.Vector3(1.2, 0.2, 0), 
+        new THREE.Vector3(1.2, 0.2, 0),
         new THREE.Vector3(1.4, -0.2, 0),
         new THREE.Vector3(1.5, -1.5, 0),
         new THREE.Vector3(-1.5, -1.5, 0),
-        new THREE.Vector3(-0.3, -0.8, 0), 
-        new THREE.Vector3(-0.9, -0.6, 0), 
-        new THREE.Vector3(-1.7, -0.9, 0), 
-        new THREE.Vector3(-2.3, -0.5, 0), 
+        new THREE.Vector3(-0.3, -0.8, 0),
+        new THREE.Vector3(-0.9, -0.6, 0),
+        new THREE.Vector3(-1.7, -0.9, 0),
+        new THREE.Vector3(-2.3, -0.5, 0),
         new THREE.Vector3(-1.5, 0, 0)
     ]
 );
@@ -42,13 +46,12 @@ var geometriaLinha = caminho.createPointsGeometry(260);
 var linha = new THREE.Line(geometriaLinha, materialLinha);
 cena.add(linha);
 
-
 var plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(window.innerWidth, window.innerHeight), 
+    new THREE.PlaneGeometry(window.innerWidth, window.innerHeight),
     new THREE.MeshPhongMaterial({
-    color: 0x661600
-}));
-plane.position.set(0,0,-0.06);
+        color: 0x661600
+    }));
+plane.position.set(0, 0, -0.06);
 
 cena.add(plane);
 
@@ -129,7 +132,6 @@ function movimentacao() {
     if (count > linha.geometry.vertices.length - 1) {
         count = 0;
     }
-
     var vertice = linha.geometry.vertices[count];
     carro.position.set(vertice.x, vertice.y, vertice.z);
     carro.geometry.verticesNeedUpdate = true;
@@ -169,10 +171,10 @@ cena.add(luzAmbiente);
 var luzPonto = new THREE.PointLight(0xf4d442, 2.0, 100);
 luzPonto.position.set(0, 0, 1.5);
 luzPonto.castShadow = true;
-luzPonto.shadow = new THREE.LightShadow(new THREE.PerspectiveCamera(100, 1, 500, 1000));
-luzPonto.shadow.bias = 0.0001;
-luzPonto.shadow.mapSize.width = 1024;
+luzPonto.shadow.camera.near = 0.1;
+luzPonto.shadow.camera.far = 25;
 luzPonto.shadow.mapSize.height = 1024;
+luzPonto.shadow.mapSize.width = 1024;
 cena.add(luzPonto);
 
 carro.castShadow = true;
@@ -239,10 +241,12 @@ document.onkeydown = function (evt) {
 //carro.material.side = THREE.DoubleSide;
 
 function desenhar() {
+    stats.begin();
     movimentacao();
     processaTeclas();
     animacaoCarro();
     render.render(cena, camera);
+    stats.end();
     requestAnimationFrame(desenhar);
 }
 
